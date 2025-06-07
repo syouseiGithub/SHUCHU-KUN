@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2018",
+    "module": "none",
+    "lib": ["ES2018", "DOM"],
+    "outDir": "./Public/js",
+    "rootDir": "./Public/ts",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": false,
+    "removeComments": false,
+    "sourceMap": true
+  },
+  "include": [
+    "Public/ts/**/*"
+  ],
+  "exclude": [
+    "Public/tests/**/*",
+    "node_modules"
+  ]
+}

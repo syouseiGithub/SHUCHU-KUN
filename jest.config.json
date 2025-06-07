@@ -1,0 +1,10 @@
+{
+  "preset": "ts-jest",
+  "testEnvironment": "jsdom",
+  "roots": ["<rootDir>/Public/tests"],
+  "testMatch": ["**/*.test.ts"],
+  "collectCoverageFrom": [
+    "Public/ts/**/*.ts",
+    "!Public/ts/**/*.d.ts"
+  ]
+}
