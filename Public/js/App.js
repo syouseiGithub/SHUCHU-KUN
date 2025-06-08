@@ -1,10 +1,12 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 /**
  * Main application entry point for Shuchu-kun
  */
+const NotificationPermissionManager_1 = require("./NotificationPermissionManager");
 class App {
     constructor() {
-        this.notificationManager = new NotificationPermissionManager();
+        this.notificationManager = new NotificationPermissionManager_1.NotificationPermissionManager();
     }
     /**
      * Initialize the application

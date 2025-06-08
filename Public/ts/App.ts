@@ -1,6 +1,8 @@
 /**
  * Main application entry point for Shuchu-kun
  */
+import { NotificationPermissionManager } from './NotificationPermissionManager';
+
 class App {
     private notificationManager: NotificationPermissionManager;
 

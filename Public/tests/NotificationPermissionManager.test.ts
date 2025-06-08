@@ -2,107 +2,47 @@
  * Unit tests for NotificationPermissionManager class
  */
 
-// Mock the class for testing
-class TestableNotificationPermissionManager {
-    public notificationPermissionScreen: HTMLElement | null;
-    public mainAppScreen: HTMLElement | null;
-    public enableNotificationBtn: HTMLElement | null;
+// Import the actual class for testing
+import { NotificationPermissionManager } from '../ts/NotificationPermissionManager';
 
-    constructor(
-        notificationPermissionScreen?: HTMLElement | null,
-        mainAppScreen?: HTMLElement | null,
-        enableNotificationBtn?: HTMLElement | null
-    ) {
-        this.notificationPermissionScreen = notificationPermissionScreen ?? document.getElementById('notification-permission-screen');
-        this.mainAppScreen = mainAppScreen ?? document.getElementById('main-app-screen');
-        this.enableNotificationBtn = enableNotificationBtn ?? document.getElementById('enable-notification-btn');
-        
-        this.init();
+// Testable version that exposes protected methods
+class TestableNotificationPermissionManager extends NotificationPermissionManager {
+    // Access protected properties directly since they are inherited
+    public get notificationPermissionScreenElement(): HTMLElement | null {
+        return this.notificationPermissionScreen;
     }
 
+    public get mainAppScreenElement(): HTMLElement | null {
+        return this.mainAppScreen;
+    }
+
+    public get enableNotificationBtnElement(): HTMLElement | null {
+        return this.enableNotificationBtn;
+    }
+
+    // Expose protected methods as public for testing
     public init(): void {
-        this.checkNotificationPermission();
-        this.bindEvents();
+        super.init();
     }
 
     public checkNotificationPermission(): void {
-        if (!('Notification' in window) || typeof window.Notification === 'undefined') {
-            console.warn('This browser does not support notifications');
-            this.showNotificationPermissionScreen();
-            return;
-        }
-
-        switch (Notification.permission) {
-            case 'granted':
-                this.showMainAppScreen();
-                break;
-            case 'denied':
-            case 'default':
-                this.showNotificationPermissionScreen();
-                break;
-        }
+        super.checkNotificationPermission();
     }
 
     public async requestNotificationPermission(): Promise<void> {
-        if (!('Notification' in window) || typeof window.Notification === 'undefined') {
-            alert('このブラウザは通知機能をサポートしていません。');
-            return;
-        }
-
-        try {
-            const permission = await Notification.requestPermission();
-            
-            if (permission === 'granted') {
-                this.showMainAppScreen();
-                // Show a test notification
-                new Notification('集中君', {
-                    body: '通知機能が有効になりました！',
-                    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🎯</text></svg>'
-                });
-            } else {
-                alert('通知機能を有効にしてください。ブラウザの設定から通知を許可できます。');
-            }
-        } catch (error) {
-            console.error('Error requesting notification permission:', error);
-            alert('通知機能の許可中にエラーが発生しました。');
-        }
+        return super.requestNotificationPermission();
     }
 
     public showNotificationPermissionScreen(): void {
-        if (this.notificationPermissionScreen) {
-            this.notificationPermissionScreen.classList.remove('hidden');
-        }
-        if (this.mainAppScreen) {
-            this.mainAppScreen.classList.add('hidden');
-        }
+        super.showNotificationPermissionScreen();
     }
 
     public showMainAppScreen(): void {
-        if (this.notificationPermissionScreen) {
-            this.notificationPermissionScreen.classList.add('hidden');
-        }
-        if (this.mainAppScreen) {
-            this.mainAppScreen.classList.remove('hidden');
-        }
+        super.showMainAppScreen();
     }
 
     public bindEvents(): void {
-        if (this.enableNotificationBtn) {
-            this.enableNotificationBtn.addEventListener('click', () => {
-                this.requestNotificationPermission();
-            });
-        }
-    }
-
-    public getPermissionStatus(): NotificationPermission {
-        if (!('Notification' in window) || typeof window.Notification === 'undefined') {
-            return 'denied';
-        }
-        return Notification.permission;
-    }
-
-    public isNotificationSupported(): boolean {
-        return 'Notification' in window && typeof window.Notification !== 'undefined';
+        super.bindEvents();
     }
 }
 
@@ -178,9 +118,9 @@ describe('NotificationPermissionManager', () => {
 
     describe('Constructor and Initialization', () => {
         it('should initialize with provided DOM elements', () => {
-            expect(manager.notificationPermissionScreen).toBe(mockNotificationScreen);
-            expect(manager.mainAppScreen).toBe(mockMainScreen);
-            expect(manager.enableNotificationBtn).toBe(mockButton);
+            expect(manager.notificationPermissionScreenElement).toBe(mockNotificationScreen);
+            expect(manager.mainAppScreenElement).toBe(mockMainScreen);
+            expect(manager.enableNotificationBtnElement).toBe(mockButton);
         });
 
         it('should call init during construction', () => {

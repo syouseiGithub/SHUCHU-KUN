@@ -1,4 +1,6 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.NotificationPermissionManager = void 0;
 /**
  * Notification permission manager for the Shuchu-kun app
  * Handles Web Notifications API permission checks and requests
@@ -113,4 +115,5 @@ class NotificationPermissionManager {
         return 'Notification' in window && typeof window.Notification !== 'undefined';
     }
 }
+exports.NotificationPermissionManager = NotificationPermissionManager;
 //# sourceMappingURL=NotificationPermissionManager.js.map

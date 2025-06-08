@@ -2,10 +2,10 @@
  * Notification permission manager for the Shuchu-kun app
  * Handles Web Notifications API permission checks and requests
  */
-class NotificationPermissionManager {
-    private notificationPermissionScreen: HTMLElement | null;
-    private mainAppScreen: HTMLElement | null;
-    private enableNotificationBtn: HTMLElement | null;
+export class NotificationPermissionManager {
+    protected notificationPermissionScreen: HTMLElement | null;
+    protected mainAppScreen: HTMLElement | null;
+    protected enableNotificationBtn: HTMLElement | null;
 
     constructor(
         notificationPermissionScreen?: HTMLElement | null,
