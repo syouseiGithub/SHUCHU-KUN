@@ -7,10 +7,14 @@ class NotificationPermissionManager {
     private mainAppScreen: HTMLElement | null;
     private enableNotificationBtn: HTMLElement | null;
 
-    constructor() {
-        this.notificationPermissionScreen = document.getElementById('notification-permission-screen');
-        this.mainAppScreen = document.getElementById('main-app-screen');
-        this.enableNotificationBtn = document.getElementById('enable-notification-btn');
+    constructor(
+        notificationPermissionScreen?: HTMLElement | null,
+        mainAppScreen?: HTMLElement | null,
+        enableNotificationBtn?: HTMLElement | null
+    ) {
+        this.notificationPermissionScreen = notificationPermissionScreen ?? document.getElementById('notification-permission-screen');
+        this.mainAppScreen = mainAppScreen ?? document.getElementById('main-app-screen');
+        this.enableNotificationBtn = enableNotificationBtn ?? document.getElementById('enable-notification-btn');
         
         this.init();
     }
@@ -18,7 +22,7 @@ class NotificationPermissionManager {
     /**
      * Initialize the notification permission manager
      */
-    private init(): void {
+    protected init(): void {
         this.checkNotificationPermission();
         this.bindEvents();
     }
@@ -26,8 +30,8 @@ class NotificationPermissionManager {
     /**
      * Check current notification permission status and show appropriate screen
      */
-    private checkNotificationPermission(): void {
-        if (!('Notification' in window)) {
+    protected checkNotificationPermission(): void {
+        if (!('Notification' in window) || typeof window.Notification === 'undefined') {
             console.warn('This browser does not support notifications');
             this.showNotificationPermissionScreen();
             return;
@@ -47,8 +51,8 @@ class NotificationPermissionManager {
     /**
      * Request notification permission from the user
      */
-    private async requestNotificationPermission(): Promise<void> {
-        if (!('Notification' in window)) {
+    protected async requestNotificationPermission(): Promise<void> {
+        if (!('Notification' in window) || typeof window.Notification === 'undefined') {
             alert('このブラウザは通知機能をサポートしていません。');
             return;
         }
@@ -75,7 +79,7 @@ class NotificationPermissionManager {
     /**
      * Show the notification permission screen
      */
-    private showNotificationPermissionScreen(): void {
+    protected showNotificationPermissionScreen(): void {
         if (this.notificationPermissionScreen) {
             this.notificationPermissionScreen.classList.remove('hidden');
         }
@@ -87,7 +91,7 @@ class NotificationPermissionManager {
     /**
      * Show the main app screen
      */
-    private showMainAppScreen(): void {
+    protected showMainAppScreen(): void {
         if (this.notificationPermissionScreen) {
             this.notificationPermissionScreen.classList.add('hidden');
         }
@@ -99,7 +103,7 @@ class NotificationPermissionManager {
     /**
      * Bind event listeners
      */
-    private bindEvents(): void {
+    protected bindEvents(): void {
         if (this.enableNotificationBtn) {
             this.enableNotificationBtn.addEventListener('click', () => {
                 this.requestNotificationPermission();
@@ -112,7 +116,7 @@ class NotificationPermissionManager {
      * @returns The current permission status
      */
     public getPermissionStatus(): NotificationPermission {
-        if (!('Notification' in window)) {
+        if (!('Notification' in window) || typeof window.Notification === 'undefined') {
             return 'denied';
         }
         return Notification.permission;
@@ -123,6 +127,6 @@ class NotificationPermissionManager {
      * @returns True if notifications are supported
      */
     public isNotificationSupported(): boolean {
-        return 'Notification' in window;
+        return 'Notification' in window && typeof window.Notification !== 'undefined';
     }
 }
