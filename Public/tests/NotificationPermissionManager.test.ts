@@ -2,62 +2,16 @@
  * Unit tests for NotificationPermissionManager class
  */
 
-// Import the actual class for testing
-import { NotificationPermissionManager } from '../ts/NotificationPermissionManager';
-
-// Testable version that exposes protected methods
-class TestableNotificationPermissionManager extends NotificationPermissionManager {
-    // Access protected properties directly since they are inherited
-    public get notificationPermissionScreenElement(): HTMLElement | null {
-        return this.notificationPermissionScreen;
-    }
-
-    public get mainAppScreenElement(): HTMLElement | null {
-        return this.mainAppScreen;
-    }
-
-    public get enableNotificationBtnElement(): HTMLElement | null {
-        return this.enableNotificationBtn;
-    }
-
-    // Expose protected methods as public for testing
-    public init(): void {
-        super.init();
-    }
-
-    public checkNotificationPermission(): void {
-        super.checkNotificationPermission();
-    }
-
-    public async requestNotificationPermission(): Promise<void> {
-        return super.requestNotificationPermission();
-    }
-
-    public showNotificationPermissionScreen(): void {
-        super.showNotificationPermissionScreen();
-    }
-
-    public showMainAppScreen(): void {
-        super.showMainAppScreen();
-    }
-
-    public bindEvents(): void {
-        super.bindEvents();
-    }
-}
+import { NotificationPermissionManager, NotificationDependencies } from '../ts/NotificationPermissionManager';
 
 describe('NotificationPermissionManager', () => {
-    let manager: TestableNotificationPermissionManager;
+    let manager: NotificationPermissionManager;
     let mockNotificationScreen: HTMLElement;
     let mockMainScreen: HTMLElement;
     let mockButton: HTMLElement;
-    let mockNotification: any;
-    let originalNotification: any;
+    let mockDependencies: NotificationDependencies;
 
     beforeEach(() => {
-        // Store original Notification
-        originalNotification = (window as any).Notification;
-
         // Mock DOM elements
         mockNotificationScreen = {
             classList: {
@@ -77,306 +31,360 @@ describe('NotificationPermissionManager', () => {
             addEventListener: jest.fn()
         } as any;
 
-        // Mock Notification API
-        mockNotification = jest.fn().mockImplementation(() => ({}));
-        mockNotification.permission = 'default' as NotificationPermission;
-        mockNotification.requestPermission = jest.fn();
+        // Mock dependencies
+        mockDependencies = {
+            notificationAPI: {
+                permission: 'default' as NotificationPermission,
+                requestPermission: jest.fn() as jest.MockedFunction<() => Promise<NotificationPermission>>,
+                create: jest.fn() as jest.MockedFunction<(title: string, options?: NotificationOptions) => void>,
+                isSupported: jest.fn() as jest.MockedFunction<() => boolean>
+            },
+            console: {
+                warn: jest.fn() as jest.MockedFunction<(message: string) => void>,
+                error: jest.fn() as jest.MockedFunction<(message: string, error?: any) => void>
+            },
+            alert: jest.fn() as jest.MockedFunction<(message: string) => void>
+        };
+
+        // Set default return values
+        (mockDependencies.notificationAPI.isSupported as jest.MockedFunction<() => boolean>).mockReturnValue(true);
 
         // Clear all mocks
         jest.clearAllMocks();
-
-        // Mock global functions
-        (global as any).alert = jest.fn();
-        (global as any).console = {
-            warn: jest.fn(),
-            error: jest.fn()
-        };
-
-        // Mock window.Notification
-        Object.defineProperty(window, 'Notification', {
-            writable: true,
-            configurable: true,
-            value: mockNotification
-        });
-
-        // Create manager instance with mocked DOM elements
-        manager = new TestableNotificationPermissionManager(
-            mockNotificationScreen,
-            mockMainScreen,
-            mockButton
-        );
-    });
-
-    afterEach(() => {
-        // Restore original Notification
-        Object.defineProperty(window, 'Notification', {
-            writable: true,
-            configurable: true,
-            value: originalNotification
-        });
     });
 
     describe('Constructor and Initialization', () => {
-        it('should initialize with provided DOM elements', () => {
-            expect(manager.notificationPermissionScreenElement).toBe(mockNotificationScreen);
-            expect(manager.mainAppScreenElement).toBe(mockMainScreen);
-            expect(manager.enableNotificationBtnElement).toBe(mockButton);
+        it('should initialize with provided DOM elements and dependencies', () => {
+            manager = new NotificationPermissionManager(
+                mockNotificationScreen,
+                mockMainScreen,
+                mockButton,
+                mockDependencies
+            );
+
+            // Verify event binding was called
+            expect(mockButton.addEventListener).toHaveBeenCalledWith('click', expect.any(Function));
         });
 
-        it('should call init during construction', () => {
-            // Since init is called in constructor, check its effects
+        it('should initialize with default DOM elements when not provided', () => {
+            // Mock document.getElementById
+            const getElementByIdSpy = jest.spyOn(document, 'getElementById')
+                .mockReturnValueOnce(mockNotificationScreen)
+                .mockReturnValueOnce(mockMainScreen)
+                .mockReturnValueOnce(mockButton);
+
+            manager = new NotificationPermissionManager(undefined, undefined, undefined, mockDependencies);
+
+            expect(getElementByIdSpy).toHaveBeenCalledWith('notification-permission-screen');
+            expect(getElementByIdSpy).toHaveBeenCalledWith('main-app-screen');
+            expect(getElementByIdSpy).toHaveBeenCalledWith('enable-notification-btn');
             expect(mockButton.addEventListener).toHaveBeenCalled();
+
+            getElementByIdSpy.mockRestore();
+        });
+
+        it('should create default dependencies when not provided', () => {
+            // Mock window.Notification
+            const mockNotification = jest.fn() as any;
+            mockNotification.permission = 'default';
+            mockNotification.requestPermission = jest.fn();
+            Object.defineProperty(window, 'Notification', {
+                writable: true,
+                configurable: true,
+                value: mockNotification
+            });
+
+            // Mock global functions
+            const alertSpy = jest.spyOn(window, 'alert').mockImplementation();
+            const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+
+            manager = new NotificationPermissionManager(
+                mockNotificationScreen,
+                mockMainScreen,
+                mockButton
+            );
+
+            // Test that default dependencies work
+            expect(manager.getPermissionStatus()).toBe('default');
+            expect(manager.isNotificationSupported()).toBe(true);
+
+            alertSpy.mockRestore();
+            consoleWarnSpy.mockRestore();
         });
     });
 
-    describe('checkNotificationPermission method', () => {
+    describe('Permission checking logic', () => {
+        beforeEach(() => {
+            manager = new NotificationPermissionManager(
+                mockNotificationScreen,
+                mockMainScreen,
+                mockButton,
+                mockDependencies
+            );
+        });
+
         it('should show main app screen when permission is granted', () => {
-            mockNotification.permission = 'granted';
-            
-            manager.checkNotificationPermission();
-            
+            mockDependencies.notificationAPI.permission = 'granted';
+            jest.clearAllMocks();
+
+            // Create new manager to trigger init
+            new NotificationPermissionManager(
+                mockNotificationScreen,
+                mockMainScreen,
+                mockButton,
+                mockDependencies
+            );
+
             expect(mockNotificationScreen.classList.add).toHaveBeenCalledWith('hidden');
             expect(mockMainScreen.classList.remove).toHaveBeenCalledWith('hidden');
         });
 
         it('should show permission screen when permission is denied', () => {
-            mockNotification.permission = 'denied';
-            
-            manager.checkNotificationPermission();
-            
+            mockDependencies.notificationAPI.permission = 'denied';
+            jest.clearAllMocks();
+
+            new NotificationPermissionManager(
+                mockNotificationScreen,
+                mockMainScreen,
+                mockButton,
+                mockDependencies
+            );
+
             expect(mockNotificationScreen.classList.remove).toHaveBeenCalledWith('hidden');
             expect(mockMainScreen.classList.add).toHaveBeenCalledWith('hidden');
         });
 
         it('should show permission screen when permission is default', () => {
-            mockNotification.permission = 'default';
-            
-            manager.checkNotificationPermission();
-            
+            mockDependencies.notificationAPI.permission = 'default';
+            jest.clearAllMocks();
+
+            new NotificationPermissionManager(
+                mockNotificationScreen,
+                mockMainScreen,
+                mockButton,
+                mockDependencies
+            );
+
             expect(mockNotificationScreen.classList.remove).toHaveBeenCalledWith('hidden');
             expect(mockMainScreen.classList.add).toHaveBeenCalledWith('hidden');
         });
 
         it('should show permission screen and warn when notifications are not supported', () => {
-            // Mock console.warn before clearing all mocks
-            const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-            
-            // Create a manager instance without constructor calling init()
-            const unsupportedManager = Object.create(TestableNotificationPermissionManager.prototype);
-            unsupportedManager.notificationPermissionScreen = mockNotificationScreen;
-            unsupportedManager.mainAppScreen = mockMainScreen;
-            unsupportedManager.enableNotificationBtn = mockButton;
-            
-            // Remove Notification from window
-            Object.defineProperty(window, 'Notification', {
-                writable: true,
-                configurable: true,
-                value: undefined
-            });
-            
-            unsupportedManager.checkNotificationPermission();
-            
-            expect(consoleSpy).toHaveBeenCalledWith('This browser does not support notifications');
+            (mockDependencies.notificationAPI.isSupported as jest.MockedFunction<() => boolean>).mockReturnValue(false);
+            jest.clearAllMocks();
+
+            new NotificationPermissionManager(
+                mockNotificationScreen,
+                mockMainScreen,
+                mockButton,
+                mockDependencies
+            );
+
+            expect(mockDependencies.console.warn).toHaveBeenCalledWith('This browser does not support notifications');
             expect(mockNotificationScreen.classList.remove).toHaveBeenCalledWith('hidden');
             expect(mockMainScreen.classList.add).toHaveBeenCalledWith('hidden');
-            
-            consoleSpy.mockRestore();
         });
     });
 
-    describe('requestNotificationPermission method', () => {
+    describe('Permission request logic', () => {
+        beforeEach(() => {
+            manager = new NotificationPermissionManager(
+                mockNotificationScreen,
+                mockMainScreen,
+                mockButton,
+                mockDependencies
+            );
+        });
+
         it('should show alert when notifications are not supported', async () => {
-            // Mock alert before clearing all mocks
-            const alertSpy = jest.spyOn(window, 'alert').mockImplementation();
-            
-            // Create a manager instance without constructor calling init()
-            const unsupportedManager = Object.create(TestableNotificationPermissionManager.prototype);
-            unsupportedManager.notificationPermissionScreen = mockNotificationScreen;
-            unsupportedManager.mainAppScreen = mockMainScreen;
-            unsupportedManager.enableNotificationBtn = mockButton;
-            
-            // Remove Notification from window by setting it to undefined
-            Object.defineProperty(window, 'Notification', {
-                writable: true,
-                configurable: true,
-                value: undefined
-            });
-            
-            await unsupportedManager.requestNotificationPermission();
-            
-            expect(alertSpy).toHaveBeenCalledWith('このブラウザは通知機能をサポートしていません。');
-            
-            alertSpy.mockRestore();
+            (mockDependencies.notificationAPI.isSupported as jest.MockedFunction<() => boolean>).mockReturnValue(false);
+
+            // Get the click handler that was added during initialization
+            const addEventListenerMock = mockButton.addEventListener as jest.Mock;
+            const clickHandler = addEventListenerMock.mock.calls.find(call => call[0] === 'click')[1];
+            await clickHandler();
+
+            expect(mockDependencies.alert).toHaveBeenCalledWith('このブラウザは通知機能をサポートしていません。');
         });
 
         it('should show main app and create notification when permission is granted', async () => {
-            mockNotification.requestPermission.mockResolvedValue('granted');
+            (mockDependencies.notificationAPI.requestPermission as jest.MockedFunction<() => Promise<NotificationPermission>>).mockResolvedValue('granted');
             
-            await manager.requestNotificationPermission();
+            // Get the click handler that was added during initialization
+            const addEventListenerMock = mockButton.addEventListener as jest.Mock;
+            const clickHandler = addEventListenerMock.mock.calls.find(call => call[0] === 'click')[1];
             
-            expect(mockNotification.requestPermission).toHaveBeenCalled();
+            jest.clearAllMocks();
+            
+            await clickHandler();
+
+            expect(mockDependencies.notificationAPI.requestPermission).toHaveBeenCalled();
             expect(mockNotificationScreen.classList.add).toHaveBeenCalledWith('hidden');
             expect(mockMainScreen.classList.remove).toHaveBeenCalledWith('hidden');
-            expect(mockNotification).toHaveBeenCalledWith('集中君', {
+            expect(mockDependencies.notificationAPI.create).toHaveBeenCalledWith('集中君', {
                 body: '通知機能が有効になりました！',
                 icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🎯</text></svg>'
             });
         });
 
         it('should show alert when permission is denied', async () => {
-            mockNotification.requestPermission.mockResolvedValue('denied');
-            
-            await manager.requestNotificationPermission();
-            
-            expect((global as any).alert).toHaveBeenCalledWith('通知機能を有効にしてください。ブラウザの設定から通知を許可できます。');
+            (mockDependencies.notificationAPI.requestPermission as jest.MockedFunction<() => Promise<NotificationPermission>>).mockResolvedValue('denied');
+
+            // Get the click handler that was added during initialization
+            const addEventListenerMock = mockButton.addEventListener as jest.Mock;
+            const clickHandler = addEventListenerMock.mock.calls.find(call => call[0] === 'click')[1];
+            await clickHandler();
+
+            expect(mockDependencies.alert).toHaveBeenCalledWith('通知機能を有効にしてください。ブラウザの設定から通知を許可できます。');
         });
 
         it('should handle errors gracefully', async () => {
             const error = new Error('Permission request failed');
-            mockNotification.requestPermission.mockRejectedValue(error);
-            
-            await manager.requestNotificationPermission();
-            
-            expect((global as any).console.error).toHaveBeenCalledWith('Error requesting notification permission:', error);
-            expect((global as any).alert).toHaveBeenCalledWith('通知機能の許可中にエラーが発生しました。');
+            (mockDependencies.notificationAPI.requestPermission as jest.MockedFunction<() => Promise<NotificationPermission>>).mockRejectedValue(error);
+
+            // Get the click handler that was added during initialization
+            const addEventListenerMock = mockButton.addEventListener as jest.Mock;
+            const clickHandler = addEventListenerMock.mock.calls.find(call => call[0] === 'click')[1];
+            await clickHandler();
+
+            expect(mockDependencies.console.error).toHaveBeenCalledWith('Error requesting notification permission:', error);
+            expect(mockDependencies.alert).toHaveBeenCalledWith('通知機能の許可中にエラーが発生しました。');
         });
     });
 
-    describe('showNotificationPermissionScreen method', () => {
-        it('should show notification permission screen and hide main screen', () => {
-            manager.showNotificationPermissionScreen();
-            
-            expect(mockNotificationScreen.classList.remove).toHaveBeenCalledWith('hidden');
-            expect(mockMainScreen.classList.add).toHaveBeenCalledWith('hidden');
-        });
-
-        it('should handle null elements gracefully', () => {
-            const managerWithNulls = new TestableNotificationPermissionManager(null, null, null);
-            
-            expect(() => managerWithNulls.showNotificationPermissionScreen()).not.toThrow();
-        });
-    });
-
-    describe('showMainAppScreen method', () => {
-        it('should hide notification permission screen and show main screen', () => {
-            manager.showMainAppScreen();
-            
-            expect(mockNotificationScreen.classList.add).toHaveBeenCalledWith('hidden');
-            expect(mockMainScreen.classList.remove).toHaveBeenCalledWith('hidden');
-        });
-
-        it('should handle null elements gracefully', () => {
-            const managerWithNulls = new TestableNotificationPermissionManager(null, null, null);
-            
-            expect(() => managerWithNulls.showMainAppScreen()).not.toThrow();
-        });
-    });
-
-    describe('bindEvents method', () => {
-        it('should bind click event to enable notification button', () => {
-            manager.bindEvents();
-            
-            expect(mockButton.addEventListener).toHaveBeenCalledWith('click', expect.any(Function));
-        });
-
-        it('should handle null button gracefully', () => {
-            const managerWithNullBtn = new TestableNotificationPermissionManager(
+    describe('DOM manipulation', () => {
+        beforeEach(() => {
+            manager = new NotificationPermissionManager(
                 mockNotificationScreen,
                 mockMainScreen,
-                null
+                mockButton,
+                mockDependencies
             );
-            
-            expect(() => managerWithNullBtn.bindEvents()).not.toThrow();
         });
 
-        it('should call requestNotificationPermission when button is clicked', () => {
-            // Spy on the method
-            const requestSpy = jest.spyOn(manager, 'requestNotificationPermission');
+        it('should handle null DOM elements gracefully', () => {
+            expect(() => {
+                new NotificationPermissionManager(null, null, null, mockDependencies);
+            }).not.toThrow();
+        });
+
+        it('should not throw when DOM elements are null during screen transitions', () => {
+            // Create mock dependencies for this test
+            const nullTestDependencies = {
+                notificationAPI: {
+                    permission: 'default' as NotificationPermission,
+                    requestPermission: jest.fn() as jest.MockedFunction<() => Promise<NotificationPermission>>,
+                    create: jest.fn() as jest.MockedFunction<(title: string, options?: NotificationOptions) => void>,
+                    isSupported: jest.fn() as jest.MockedFunction<() => boolean>
+                },
+                console: {
+                    warn: jest.fn() as jest.MockedFunction<(message: string) => void>,
+                    error: jest.fn() as jest.MockedFunction<(message: string, error?: any) => void>
+                },
+                alert: jest.fn() as jest.MockedFunction<(message: string) => void>
+            };
             
-            manager.bindEvents();
+            (nullTestDependencies.notificationAPI.isSupported as jest.MockedFunction<() => boolean>).mockReturnValue(true);
             
-            // Get the click handler that was added
-            const addEventListenerMock = mockButton.addEventListener as jest.Mock;
-            const clickHandler = addEventListenerMock.mock.calls[0][1];
-            clickHandler();
+            const managerWithNulls = new NotificationPermissionManager(null, null, null, nullTestDependencies);
             
-            expect(requestSpy).toHaveBeenCalled();
+            // These should not throw even with null elements
+            expect(() => managerWithNulls.getPermissionStatus()).not.toThrow();
+            expect(() => managerWithNulls.isNotificationSupported()).not.toThrow();
         });
     });
 
-    describe('getPermissionStatus method', () => {
+    describe('Public API methods', () => {
+        beforeEach(() => {
+            manager = new NotificationPermissionManager(
+                mockNotificationScreen,
+                mockMainScreen,
+                mockButton,
+                mockDependencies
+            );
+        });
+
         it('should return current notification permission status', () => {
-            mockNotification.permission = 'granted';
-            
+            mockDependencies.notificationAPI.permission = 'granted';
+
             const status = manager.getPermissionStatus();
-            
+
             expect(status).toBe('granted');
         });
 
-        it('should return denied when notifications are not supported', () => {
-            // Create a manager instance without constructor calling init()
-            const unsupportedManager = Object.create(TestableNotificationPermissionManager.prototype);
-            
-            // Remove Notification from window by setting it to undefined
-            Object.defineProperty(window, 'Notification', {
-                writable: true,
-                configurable: true,
-                value: undefined
-            });
-            
-            const status = unsupportedManager.getPermissionStatus();
-            
-            expect(status).toBe('denied');
-        });
-    });
+        it('should return notification support status', () => {
+            (mockDependencies.notificationAPI.isSupported as jest.MockedFunction<() => boolean>).mockReturnValue(true);
 
-    describe('isNotificationSupported method', () => {
-        it('should return true when notifications are supported', () => {
             const isSupported = manager.isNotificationSupported();
-            
+
             expect(isSupported).toBe(true);
         });
 
-        it('should return false when notifications are not supported', () => {
-            // Create a manager instance without constructor calling init()
-            const unsupportedManager = Object.create(TestableNotificationPermissionManager.prototype);
-            
-            // Remove Notification from window by setting it to undefined
-            Object.defineProperty(window, 'Notification', {
-                writable: true,
-                configurable: true,
-                value: undefined
-            });
-            
-            const isSupported = unsupportedManager.isNotificationSupported();
-            
+        it('should return false for notification support when not supported', () => {
+            (mockDependencies.notificationAPI.isSupported as jest.MockedFunction<() => boolean>).mockReturnValue(false);
+
+            const isSupported = manager.isNotificationSupported();
+
             expect(isSupported).toBe(false);
         });
     });
 
-    describe('Integration tests', () => {
-        it('should complete full flow from permission request to main app', async () => {
-            // Mock successful permission request
-            mockNotification.requestPermission.mockResolvedValue('granted');
-            mockNotification.permission = 'default';
-            
-            // Create a new manager to test the full flow
-            const flowManager = new TestableNotificationPermissionManager(
+    describe('Event binding', () => {
+        it('should bind click event to enable notification button', () => {
+            manager = new NotificationPermissionManager(
                 mockNotificationScreen,
                 mockMainScreen,
-                mockButton
+                mockButton,
+                mockDependencies
             );
-            
-            // Initial state should show permission screen (already called in constructor)
+
+            expect(mockButton.addEventListener).toHaveBeenCalledWith('click', expect.any(Function));
+        });
+
+        it('should not throw when button is null', () => {
+            expect(() => {
+                new NotificationPermissionManager(
+                    mockNotificationScreen,
+                    mockMainScreen,
+                    null,
+                    mockDependencies
+                );
+            }).not.toThrow();
+        });
+    });
+
+    describe('Integration flow', () => {
+        it('should complete full flow from permission request to main app', async () => {
+            (mockDependencies.notificationAPI.requestPermission as jest.MockedFunction<() => Promise<NotificationPermission>>).mockResolvedValue('granted');
+            mockDependencies.notificationAPI.permission = 'default';
+
+            // Create a new button mock for this test
+            const testButton = {
+                addEventListener: jest.fn()
+            } as any;
+
+            manager = new NotificationPermissionManager(
+                mockNotificationScreen,
+                mockMainScreen,
+                testButton,
+                mockDependencies
+            );
+
+            // Should initially show permission screen
             expect(mockNotificationScreen.classList.remove).toHaveBeenCalledWith('hidden');
+
+            // Get the click handler that was added during initialization
+            const addEventListenerMock = testButton.addEventListener as jest.Mock;
+            const clickHandler = addEventListenerMock.mock.calls.find(call => call[0] === 'click')[1];
             
-            // Request permission
-            await flowManager.requestNotificationPermission();
-            
+            jest.clearAllMocks();
+
+            await clickHandler();
+
             // Should show main app and create notification
             expect(mockNotificationScreen.classList.add).toHaveBeenCalledWith('hidden');
             expect(mockMainScreen.classList.remove).toHaveBeenCalledWith('hidden');
-            expect(mockNotification).toHaveBeenCalled();
+            expect(mockDependencies.notificationAPI.create).toHaveBeenCalled();
         });
     });
 });
