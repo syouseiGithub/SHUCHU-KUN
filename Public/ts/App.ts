@@ -1,5 +1,5 @@
 /**
- * Main application entry point for Shuchu-kun
+ * 集中君のメインアプリケーションエントリーポイント
  */
 import { NotificationPermissionManager } from './NotificationPermissionManager';
 
@@ -11,14 +11,14 @@ class App {
     }
 
     /**
-     * Initialize the application
+     * アプリケーションを初期化
      */
     public init(): void {
         console.log('集中君アプリが初期化されました');
     }
 }
 
-// Initialize the app when DOM is loaded
+// DOMが読み込まれたときにアプリを初期化
 document.addEventListener('DOMContentLoaded', () => {
     const app = new App();
     app.init();

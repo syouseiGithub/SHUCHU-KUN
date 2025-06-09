@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
- * Main application entry point for Shuchu-kun
+ * 集中君のメインアプリケーションエントリーポイント
  */
 const NotificationPermissionManager_1 = require("./NotificationPermissionManager");
 class App {
@@ -9,13 +9,13 @@ class App {
         this.notificationManager = new NotificationPermissionManager_1.NotificationPermissionManager();
     }
     /**
-     * Initialize the application
+     * アプリケーションを初期化
      */
     init() {
         console.log('集中君アプリが初期化されました');
     }
 }
-// Initialize the app when DOM is loaded
+// DOMが読み込まれたときにアプリを初期化
 document.addEventListener('DOMContentLoaded', () => {
     const app = new App();
     app.init();

@@ -2,20 +2,20 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NotificationPermissionManager = void 0;
 /**
- * Notification permission manager for the Shuchu-kun app
- * Handles Web Notifications API permission checks and requests
+ * 集中君アプリの通知許可管理クラス
+ * Web Notifications APIの許可確認とリクエストを処理します
  */
 class NotificationPermissionManager {
     constructor(notificationPermissionScreen, mainAppScreen, enableNotificationBtn, dependencies) {
         this.notificationPermissionScreen = notificationPermissionScreen !== null && notificationPermissionScreen !== void 0 ? notificationPermissionScreen : document.getElementById('notification-permission-screen');
         this.mainAppScreen = mainAppScreen !== null && mainAppScreen !== void 0 ? mainAppScreen : document.getElementById('main-app-screen');
         this.enableNotificationBtn = enableNotificationBtn !== null && enableNotificationBtn !== void 0 ? enableNotificationBtn : document.getElementById('enable-notification-btn');
-        // Default dependencies use browser APIs
+        // デフォルトの依存関係はブラウザAPIを使用
         this.dependencies = dependencies !== null && dependencies !== void 0 ? dependencies : this.createDefaultDependencies();
         this.init();
     }
     /**
-     * Create default dependencies that use browser APIs
+     * ブラウザAPIを使用するデフォルトの依存関係を作成
      */
     createDefaultDependencies() {
         return {
@@ -46,14 +46,14 @@ class NotificationPermissionManager {
         };
     }
     /**
-     * Initialize the notification permission manager
+     * 通知許可管理を初期化
      */
     init() {
         this.checkNotificationPermission();
         this.bindEvents();
     }
     /**
-     * Check current notification permission status and show appropriate screen
+     * 現在の通知許可状態を確認し、適切な画面を表示
      */
     checkNotificationPermission() {
         if (!this.dependencies.notificationAPI.isSupported()) {
@@ -72,7 +72,7 @@ class NotificationPermissionManager {
         }
     }
     /**
-     * Request notification permission from the user
+     * ユーザーに通知許可をリクエスト
      */
     async requestNotificationPermission() {
         if (!this.dependencies.notificationAPI.isSupported()) {
@@ -83,7 +83,7 @@ class NotificationPermissionManager {
             const permission = await this.dependencies.notificationAPI.requestPermission();
             if (permission === 'granted') {
                 this.showMainAppScreen();
-                // Show a test notification
+                // テスト通知を表示
                 this.dependencies.notificationAPI.create('集中君', {
                     body: '通知機能が有効になりました！',
                     icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🎯</text></svg>'
@@ -99,7 +99,7 @@ class NotificationPermissionManager {
         }
     }
     /**
-     * Show the notification permission screen
+     * 通知許可画面を表示
      */
     showNotificationPermissionScreen() {
         if (this.notificationPermissionScreen) {
@@ -110,7 +110,7 @@ class NotificationPermissionManager {
         }
     }
     /**
-     * Show the main app screen
+     * メインアプリ画面を表示
      */
     showMainAppScreen() {
         if (this.notificationPermissionScreen) {
@@ -121,7 +121,7 @@ class NotificationPermissionManager {
         }
     }
     /**
-     * Bind event listeners
+     * イベントリスナーをバインド
      */
     bindEvents() {
         if (this.enableNotificationBtn) {
@@ -131,15 +131,15 @@ class NotificationPermissionManager {
         }
     }
     /**
-     * Get current notification permission status
-     * @returns The current permission status
+     * 現在の通知許可状態を取得
+     * @returns 現在の許可状態
      */
     getPermissionStatus() {
         return this.dependencies.notificationAPI.permission;
     }
     /**
-     * Check if notifications are supported
-     * @returns True if notifications are supported
+     * 通知がサポートされているかを確認
+     * @returns 通知がサポートされている場合はtrue
      */
     isNotificationSupported() {
         return this.dependencies.notificationAPI.isSupported();

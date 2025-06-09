@@ -1,5 +1,5 @@
 /**
- * Unit tests for NotificationPermissionManager class
+ * NotificationPermissionManagerクラスのユニットテスト
  */
 
 import { NotificationPermissionManager, NotificationDependencies } from '../ts/NotificationPermissionManager';
@@ -12,7 +12,7 @@ describe('NotificationPermissionManager', () => {
     let mockDependencies: NotificationDependencies;
 
     beforeEach(() => {
-        // Mock DOM elements
+        // DOM要素をモック
         mockNotificationScreen = {
             classList: {
                 add: jest.fn(),
@@ -31,7 +31,7 @@ describe('NotificationPermissionManager', () => {
             addEventListener: jest.fn()
         } as any;
 
-        // Mock dependencies
+        // 依存関係をモック
         mockDependencies = {
             notificationAPI: {
                 permission: 'default' as NotificationPermission,
@@ -46,10 +46,10 @@ describe('NotificationPermissionManager', () => {
             alert: jest.fn() as jest.MockedFunction<(message: string) => void>
         };
 
-        // Set default return values
+        // デフォルトの戻り値を設定
         (mockDependencies.notificationAPI.isSupported as jest.MockedFunction<() => boolean>).mockReturnValue(true);
 
-        // Clear all mocks
+        // 全てのモックをクリア
         jest.clearAllMocks();
     });
 
@@ -62,12 +62,12 @@ describe('NotificationPermissionManager', () => {
                 mockDependencies
             );
 
-            // Verify event binding was called
+            // イベントバインディングが呼ばれたことを確認
             expect(mockButton.addEventListener).toHaveBeenCalledWith('click', expect.any(Function));
         });
 
         it('should initialize with default DOM elements when not provided', () => {
-            // Mock document.getElementById
+            // document.getElementByIdをモック
             const getElementByIdSpy = jest.spyOn(document, 'getElementById')
                 .mockReturnValueOnce(mockNotificationScreen)
                 .mockReturnValueOnce(mockMainScreen)
@@ -84,7 +84,7 @@ describe('NotificationPermissionManager', () => {
         });
 
         it('should create default dependencies when not provided', () => {
-            // Mock window.Notification
+            // window.Notificationをモック
             const mockNotification = jest.fn() as any;
             mockNotification.permission = 'default';
             mockNotification.requestPermission = jest.fn();
@@ -94,7 +94,7 @@ describe('NotificationPermissionManager', () => {
                 value: mockNotification
             });
 
-            // Mock global functions
+            // グローバル関数をモック
             const alertSpy = jest.spyOn(window, 'alert').mockImplementation();
             const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
 
@@ -104,7 +104,7 @@ describe('NotificationPermissionManager', () => {
                 mockButton
             );
 
-            // Test that default dependencies work
+            // デフォルトの依存関係が機能することをテスト
             expect(manager.getPermissionStatus()).toBe('default');
             expect(manager.isNotificationSupported()).toBe(true);
 
@@ -127,7 +127,7 @@ describe('NotificationPermissionManager', () => {
             mockDependencies.notificationAPI.permission = 'granted';
             jest.clearAllMocks();
 
-            // Create new manager to trigger init
+            // initを起動するための新しいマネージャーを作成
             new NotificationPermissionManager(
                 mockNotificationScreen,
                 mockMainScreen,
@@ -269,7 +269,7 @@ describe('NotificationPermissionManager', () => {
         });
 
         it('should not throw when DOM elements are null during screen transitions', () => {
-            // Create mock dependencies for this test
+            // このテスト用のモック依存関係を作成
             const nullTestDependencies = {
                 notificationAPI: {
                     permission: 'default' as NotificationPermission,
@@ -288,7 +288,7 @@ describe('NotificationPermissionManager', () => {
             
             const managerWithNulls = new NotificationPermissionManager(null, null, null, nullTestDependencies);
             
-            // These should not throw even with null elements
+            // これらはnull要素があってもエラーが出ないはず
             expect(() => managerWithNulls.getPermissionStatus()).not.toThrow();
             expect(() => managerWithNulls.isNotificationSupported()).not.toThrow();
         });
@@ -358,7 +358,7 @@ describe('NotificationPermissionManager', () => {
             (mockDependencies.notificationAPI.requestPermission as jest.MockedFunction<() => Promise<NotificationPermission>>).mockResolvedValue('granted');
             mockDependencies.notificationAPI.permission = 'default';
 
-            // Create a new button mock for this test
+            // このテスト用に新しいボタンモックを作成
             const testButton = {
                 addEventListener: jest.fn()
             } as any;
@@ -370,7 +370,7 @@ describe('NotificationPermissionManager', () => {
                 mockDependencies
             );
 
-            // Should initially show permission screen
+            // 最初に許可画面を表示するはず
             expect(mockNotificationScreen.classList.remove).toHaveBeenCalledWith('hidden');
 
             // Get the click handler that was added during initialization
@@ -381,7 +381,7 @@ describe('NotificationPermissionManager', () => {
 
             await clickHandler();
 
-            // Should show main app and create notification
+            // メインアプリを表示し、通知を作成するはず
             expect(mockNotificationScreen.classList.add).toHaveBeenCalledWith('hidden');
             expect(mockMainScreen.classList.remove).toHaveBeenCalledWith('hidden');
             expect(mockDependencies.notificationAPI.create).toHaveBeenCalled();
