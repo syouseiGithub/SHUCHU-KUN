@@ -1,0 +1,48 @@
+name: CI - Build and Test
+
+# ワークフローの実行条件
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    name: ビルドとユニットテスト実行
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+    - name: リポジトリをチェックアウト
+      uses: actions/checkout@v4
+
+    - name: Node.js ${{ matrix.node-version }} をセットアップ
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: 依存関係をインストール
+      run: npm ci
+
+    - name: TypeScriptビルドを実行
+      run: npm run build
+
+    - name: ユニットテストを実行
+      run: npm test
+
+    - name: テストカバレッジを生成
+      run: npm test -- --coverage
+
+    - name: カバレッジレポートをアップロード
+      uses: codecov/codecov-action@v3
+      if: matrix.node-version == '20.x'
+      with:
+        file: ./coverage/lcov.info
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
