@@ -1,12 +1,10 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 /**
  * 集中君のメインアプリケーションエントリーポイント
  */
-const NotificationPermissionManager_1 = require("./NotificationPermissionManager");
+import { NotificationPermissionManager } from './NotificationPermissionManager';
 class App {
     constructor() {
-        this.notificationManager = new NotificationPermissionManager_1.NotificationPermissionManager();
+        this.notificationManager = new NotificationPermissionManager();
     }
     /**
      * アプリケーションを初期化

@@ -1,11 +1,8 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.NotificationPermissionManager = void 0;
 /**
  * 集中君アプリの通知許可管理クラス
  * Web Notifications APIの許可確認とリクエストを処理します
  */
-class NotificationPermissionManager {
+export class NotificationPermissionManager {
     constructor(notificationPermissionScreen, mainAppScreen, enableNotificationBtn, dependencies) {
         this.notificationPermissionScreen = notificationPermissionScreen !== null && notificationPermissionScreen !== void 0 ? notificationPermissionScreen : document.getElementById('notification-permission-screen');
         this.mainAppScreen = mainAppScreen !== null && mainAppScreen !== void 0 ? mainAppScreen : document.getElementById('main-app-screen');
@@ -145,5 +142,4 @@ class NotificationPermissionManager {
         return this.dependencies.notificationAPI.isSupported();
     }
 }
-exports.NotificationPermissionManager = NotificationPermissionManager;
 //# sourceMappingURL=NotificationPermissionManager.js.map
