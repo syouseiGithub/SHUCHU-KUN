@@ -1,7 +1,7 @@
 /**
  * 集中君のメインアプリケーションエントリーポイント
  */
-import { NotificationPermissionManager } from './NotificationPermissionManager';
+import { NotificationPermissionManager } from './NotificationPermissionManager.js';
 class App {
     constructor() {
         this.notificationManager = new NotificationPermissionManager();
